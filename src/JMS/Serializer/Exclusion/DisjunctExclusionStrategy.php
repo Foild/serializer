@@ -90,4 +90,48 @@ class DisjunctExclusionStrategy implements ExclusionStrategyInterface
 
         return false;
     }
+
+    /**
+     * Whether the property should be skipped.
+     *
+     * @param PropertyMetadata $property
+     *
+     * @return boolean
+     */
+    public function shouldSkipPropertyIgnoringDepth(PropertyMetadata $property, Context $context)
+    {
+        foreach ($this->delegates as $delegate) {
+            if(($delegate instanceof DepthExclusionStrategy) === false) {
+                /** @var $delegate ExclusionStrategyInterface */
+                if ($delegate->shouldSkipProperty($property, $context)) {
+                    return true;
+                }
+            }
+            
+        }
+
+        return false;
+    }
+
+    /**
+     * Whether the property should be skipped.
+     *
+     * @param PropertyMetadata $property
+     *
+     * @return boolean
+     */
+    public function shouldSkipPropertyDepth(PropertyMetadata $property, Context $context)
+    {
+        foreach ($this->delegates as $delegate) {
+            if($delegate instanceof DepthExclusionStrategy) {
+                /** @var $delegate ExclusionStrategyInterface */
+                if ($delegate->shouldSkipProperty($property, $context)) {
+                    return true;
+                }
+            }
+            
+        }
+
+        return false;
+    }
 }
