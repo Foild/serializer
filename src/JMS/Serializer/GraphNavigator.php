@@ -223,7 +223,19 @@ final class GraphNavigator
 
                 $visitor->startVisitingObject($metadata, $object, $type, $context);
                 foreach ($metadata->propertyMetadata as $propertyMetadata) {
-                    if (null !== $exclusionStrategy && $exclusionStrategy->shouldSkipProperty($propertyMetadata, $context)) {
+                    $shouldSkip = false;
+                    $metDepthLimit = false;
+                    
+                    if($exclusionStrategy instanceof JMS\Serializer\Exclusion\DisjunctExclusionStrategy) {
+                        //if($exclusionStrategy->hasStrategyType(JMS\Serializer\Exclusion\DepthExclusionStrategy::class)) {
+                            
+                        //}
+                        $shouldSkip = $exclusionStrategy->shouldSkipPropertyIgnoringDepth($propertyMetadata, $context);
+                        $metDepthLimit = $exclusionStrategy->shouldSkipPropertyDepth($propertyMetadata, $context);
+                    }else{
+                        $shouldSkip = $exclusionStrategy->shouldSkipProperty($propertyMetadata, $context);
+                    }
+                    if (null !== $exclusionStrategy && $shouldSkip) {
                         continue;
                     }
 
@@ -232,7 +244,7 @@ final class GraphNavigator
                     }
 
                     $context->pushPropertyMetadata($propertyMetadata);
-                    $visitor->visitProperty($propertyMetadata, $data, $context);
+                    $visitor->visitProperty($propertyMetadata, $metDepthLimit ? '__special_limit' : $data , $context);
                     $context->popPropertyMetadata();
                 }
 
