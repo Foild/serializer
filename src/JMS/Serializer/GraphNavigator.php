@@ -225,15 +225,17 @@ final class GraphNavigator
                 foreach ($metadata->propertyMetadata as $propertyMetadata) {
                     $shouldSkip = false;
                     $metDepthLimit = false;
-                    
-                    if($exclusionStrategy instanceof JMS\Serializer\Exclusion\DisjunctExclusionStrategy) {
+                    $isNotScalar = $propertyMetadata->type['name'] === 'ArrayCollection' || strpos($propertyMetadata->type['name'], 'Trefoild\\Cancerosity') !== false;
+                    if($isNotScalar && $exclusionStrategy instanceof \JMS\Serializer\Exclusion\DisjunctExclusionStrategy) {
                         //if($exclusionStrategy->hasStrategyType(JMS\Serializer\Exclusion\DepthExclusionStrategy::class)) {
-                            
+
                         //}
                         $shouldSkip = $exclusionStrategy->shouldSkipPropertyIgnoringDepth($propertyMetadata, $context);
                         $metDepthLimit = $exclusionStrategy->shouldSkipPropertyDepth($propertyMetadata, $context);
+                    }else if ($isNotScalar && $exclusionStrategy instanceof \JMS\Serializer\Exclusion\DepthExclusionStrategy){
+                        $metDepthLimit = $exclusionStrategy->shouldSkipProperty($propertyMetadata, $context);
                     }else{
-                        $shouldSkip = $exclusionStrategy->shouldSkipProperty($propertyMetadata, $context);
+                        $shouldSkip = false;
                     }
                     if (null !== $exclusionStrategy && $shouldSkip) {
                         continue;
@@ -243,9 +245,17 @@ final class GraphNavigator
                         continue;
                     }
 
-                    $context->pushPropertyMetadata($propertyMetadata);
-                    $visitor->visitProperty($propertyMetadata, $metDepthLimit ? '__special_limit' : $data , $context);
-                    $context->popPropertyMetadata();
+
+                    if($metDepthLimit) {
+                        $k = $visitor->getNamingStrategy()->translateName($propertyMetadata);
+                        $visitor->addData($k, '__recursive_depth_limit');
+                        // addData
+                    }else{
+                        $context->pushPropertyMetadata($propertyMetadata);
+                        $visitor->visitProperty($propertyMetadata, $data , $context);
+                        $context->popPropertyMetadata();
+                    }
+
                 }
 
                 if ($context instanceof SerializationContext) {
